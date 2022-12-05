@@ -2,7 +2,7 @@
 autoload -Uz colors && colors
 notes_dir="$HOME/.notes"
 n_recent_notes=6
-alias vif="vim +Goyo +'set syntax=markdown' +'let NERDTreeQuitOnOpen = 1' +'colorscheme molokai' +'set spell' +'set nonumber'"
+alias vif="nvim +Goyo +'set syntax=markdown' +'let NERDTreeQuitOnOpen = 1' +'colorscheme molokai' +'set spell' +'set nonumber'"
 
 # Check that dependencies are installed
 function test-cmd-exists() {
@@ -64,8 +64,14 @@ function sub_help() {
 }
 
 function sub_menu() {
+	if [[ $(uname -s) == 'Darwin' ]]; then
+		stat_command=(stat -f '%B - %N')
+	else
+	        stat_command=(stat -c '%Y - %n')
+	fi
+
 	if [[ -d $notes_dir/pin ]]; then
-		pinned=$(fd -t f . $notes_dir/pin -X stat -f '%B - %N' \
+		pinned=$(fd -t f . $notes_dir/pin -X $stat_command \
 			| sort -r \
 			| sed -r 's/^[0-9]+ - (.*)/\1/')
 		files=("${(@f)pinned}")
@@ -75,7 +81,7 @@ function sub_menu() {
 		fi
 	fi
 
-	lines=$(fd -t f . $notes_dir -X stat -f '%B - %N' \
+	lines=$(fd -t f . $notes_dir -X $stat_command \
 		| sort -r \
 		| head -$n_recent_notes \
 		| sed -r 's/^[0-9]+ - (.*)/\1/')

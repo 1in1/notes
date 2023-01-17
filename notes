@@ -7,112 +7,112 @@ alias grep_command="rg --no-messages --color=always --smart-case --line-number"
 
 # Check that dependencies are installed
 function test-cmd-exists() {
-	if ! type $1 > /dev/null; then
-		echo "$fg_bold[red]ERROR$reset_color: $1 not installed. aborting."
-		exit 1
-	fi
+    if ! type $1 > /dev/null; then
+        echo "$fg_bold[red]ERROR$reset_color: $1 not installed. aborting."
+        exit 1
+    fi
 }
 dependencies=(fd fzf sort head nvim git sed tree)
 for d in $dependencies[@]; do test-cmd-exists $d; done
 
 # Checks directory is set up
 function check-setup() {
-	if [ ! -d $notes_dir ]; then
-		echo "${fg[blue]}Looks like you don't have a directory at $notes_dir. Making one now...$reset_color"
-		mkdir $notes_dir
-	fi
-	cd $notes_dir
-	
-	if [ ! -d $notes_dir/pin ]; then
-		echo "${fg[blue]}Looks like you don't have a directory at $notes_dir/pin. Making one now...$reset_color"
-		mkdir $notes_dir/pin
-	fi
-	
-	
-	if [ ! -d $notes_dir/.git ]; then
-		echo "${fg[blue]}Looks like you haven't set up versioning in $notes_dir. Setting it up now...$reset_color"
-		git init &> /dev/null
-		git commit --allow-empty -m "init"  &> /dev/null
-	fi
+    if [ ! -d $notes_dir ]; then
+        echo "${fg[blue]}Looks like you don't have a directory at $notes_dir. Making one now...$reset_color"
+        mkdir $notes_dir
+    fi
+    cd $notes_dir
+    
+    if [ ! -d $notes_dir/pin ]; then
+        echo "${fg[blue]}Looks like you don't have a directory at $notes_dir/pin. Making one now...$reset_color"
+        mkdir $notes_dir/pin
+    fi
+    
+    
+    if [ ! -d $notes_dir/.git ]; then
+        echo "${fg[blue]}Looks like you haven't set up versioning in $notes_dir. Setting it up now...$reset_color"
+        git init &> /dev/null
+        git commit --allow-empty -m "init"  &> /dev/null
+    fi
 }
 check-setup
 
 function get_new_note_name() {
-	possible_names=$(printf "new-note-%s\n" {1..1000})
-	for name in ${(@f)possible_names}; do
-		if [ ! -f $name ]; then
-			echo $name
-			exit 0
-		fi
-	done
-	echo ""
+    possible_names=$(printf "new-note-%s\n" {1..1000})
+    for name in ${(@f)possible_names}; do
+        if [ ! -f $name ]; then
+            echo $name
+            exit 0
+        fi
+    done
+    echo ""
 }
 
 function sub_help() {
-	subcommands=(
+    subcommands=(
         "menu:Main interface to notes (default)"
         "list:Draw a tree of the notes directory"
         "tree:Open notes folder with nvim-tree"
         "grep:Search text of notes"
         "fzf:Fuzzy find note, and open it"
-	)
-	echo "notes - bare-bones note management\n"
-	for s in $subcommands; do
-		a=(${(s/:/)s})
-		echo "${a[1]} \t-- ${a[2]}"
-	done
+    )
+    echo "notes - bare-bones note management\n"
+    for s in $subcommands; do
+        a=(${(s/:/)s})
+        echo "${a[1]} \t-- ${a[2]}"
+    done
 }
 
 function sub_menu() {
-	if [[ $(uname -s) == 'Darwin' ]]; then
-		stat_command=(stat -f '%B - %N')
-	else
-	        stat_command=(stat -c '%Y - %n')
-	fi
+    if [[ $(uname -s) == 'Darwin' ]]; then
+        stat_command=(stat -f '%B - %N')
+    else
+            stat_command=(stat -c '%Y - %n')
+    fi
 
-	if [[ -d $notes_dir/pin ]]; then
-		pinned=$(fd -t f . $notes_dir/pin -X $stat_command \
-			| sort -r \
-			| sed -r 's/^[0-9]+ - (.*)/\1/')
-		files=("${(@f)pinned}")
-		basenames=("${(@f)$(basename -a $files 2> /dev/null)}")
-		if [[ ${#basenames[@]} > 0 ]]; then
-			echo "${fg_bold[magenta]}Pinned : ${fg_no_bold[magenta]}${basenames[@]}$reset_color"
-		fi
-	fi
+    if [[ -d $notes_dir/pin ]]; then
+        pinned=$(fd -t f . $notes_dir/pin -X $stat_command \
+            | sort -r \
+            | sed -r 's/^[0-9]+ - (.*)/\1/')
+        files=("${(@f)pinned}")
+        basenames=("${(@f)$(basename -a $files 2> /dev/null)}")
+        if [[ ${#basenames[@]} > 0 ]]; then
+            echo "${fg_bold[magenta]}Pinned : ${fg_no_bold[magenta]}${basenames[@]}$reset_color"
+        fi
+    fi
 
-	lines=$(fd -t f . $notes_dir -X $stat_command \
-		| sort -r \
-		| head -$n_recent_notes \
-		| sed -r 's/^[0-9]+ - (.*)/\1/')
-	files=("${(@f)lines}")
-	basenames=("${(@f)$(basename -a $files 2> /dev/null)}")
-	
-	select note in "${fg_bold[green]}New note$reset_color" "${fg_bold[green]}Another file$reset_color" ${basenames[@]}; do
-		if [[ $REPLY == 1 ]]; then
-			default_name=$(get_new_note_name)
-			printf "Name new note (empty for $default_name): $notes_dir/"
-			read f
-			if [[ $f ]]; then
-				vif $f
-			else
-				vif $default_name
-			fi
-		elif [[ $REPLY == 2 ]]; then
-			sub_tree
-		else
-			vif $files[$REPLY-2]
-		fi
-		break
-	done
+    lines=$(fd -t f . $notes_dir -X $stat_command \
+        | sort -r \
+        | head -$n_recent_notes \
+        | sed -r 's/^[0-9]+ - (.*)/\1/')
+    files=("${(@f)lines}")
+    basenames=("${(@f)$(basename -a $files 2> /dev/null)}")
+    
+    select note in "${fg_bold[green]}New note$reset_color" "${fg_bold[green]}Another file$reset_color" ${basenames[@]}; do
+        if [[ $REPLY == 1 ]]; then
+            default_name=$(get_new_note_name)
+            printf "Name new note (empty for $default_name): $notes_dir/"
+            read f
+            if [[ $f ]]; then
+                vif $f
+            else
+                vif $default_name
+            fi
+        elif [[ $REPLY == 2 ]]; then
+            sub_tree
+        else
+            vif $files[$REPLY-2]
+        fi
+        break
+    done
 }
 
 function sub_list() {
-	tree $notes_dir --dirsfirst -C
+    tree $notes_dir --dirsfirst -C
 }
 
 function sub_tree() {
-	vif +'NvimTreeOpen'
+    vif +'NvimTreeOpen'
 }
 
 function sub_grep() {
@@ -125,31 +125,31 @@ function sub_fzf() {
 
 subcommand=$1
 case $subcommand in
-	"")
-		sub_menu
-		;;
-	"-h" | "--help")
-		sub_help
-		;;
-	*)
-		shift
-		if typeset -f sub_${subcommand} > /dev/null; then 
-			sub_${subcommand} $@
-			if [ $? = 127 ]; then
-				echo "Not a valid subcommand\n"
-				sub_help
-				exit 1
-			fi
-		else
-			echo "Not a valid subcommand\n"
-			sub_help
-		fi
-		;;
+    "")
+        sub_menu
+        ;;
+    "-h" | "--help")
+        sub_help
+        ;;
+    *)
+        shift
+        if typeset -f sub_${subcommand} > /dev/null; then 
+            sub_${subcommand} $@
+            if [ $? = 127 ]; then
+                echo "Not a valid subcommand\n"
+                sub_help
+                exit 1
+            fi
+        else
+            echo "Not a valid subcommand\n"
+            sub_help
+        fi
+        ;;
 esac
 
 git add -N .
 git diff --quiet
 if [[ $? ]]; then
-	git add .
-	git commit -m $(date '+%y-%m-%d-%H:%M:%S') &> /dev/null
+    git add .
+    git commit -m $(date '+%y-%m-%d-%H:%M:%S') &> /dev/null
 fi

@@ -2,7 +2,8 @@
 autoload -Uz colors && colors
 notes_dir="$HOME/.notes"
 n_recent_notes=6
-alias vif="nvim +Goyo +'set syntax=markdown' +'let NERDTreeQuitOnOpen = 1' +'colorscheme molokai' +'set spell' +'set nonumber'"
+alias vif="nvim +Goyo +'set syntax=markdown' +'colorscheme terafox' +'set spell' +'set nonumber' +'set conceallevel=2'"
+alias grep_command="rg --no-messages --color=always --smart-case --line-number"
 
 # Check that dependencies are installed
 function test-cmd-exists() {
@@ -11,10 +12,8 @@ function test-cmd-exists() {
 		exit 1
 	fi
 }
-dependencies=(fd sort head vim git sed tree)
+dependencies=(fd fzf sort head nvim git sed tree)
 for d in $dependencies[@]; do test-cmd-exists $d; done
-
-
 
 # Checks directory is set up
 function check-setup() {
@@ -38,7 +37,6 @@ function check-setup() {
 }
 check-setup
 
-
 function get_new_note_name() {
 	possible_names=$(printf "new-note-%s\n" {1..1000})
 	for name in ${(@f)possible_names}; do
@@ -52,9 +50,11 @@ function get_new_note_name() {
 
 function sub_help() {
 	subcommands=(
-		"menu:Main interface to notes (default)"
-		"list:Draw a tree of the notes directory"
-		"tree:Open a NERDTree in vim"
+        "menu:Main interface to notes (default)"
+        "list:Draw a tree of the notes directory"
+        "tree:Open notes folder with nvim-tree"
+        "grep:Search text of notes"
+        "fzf:Fuzzy find note, and open it"
 	)
 	echo "notes - bare-bones note management\n"
 	for s in $subcommands; do
@@ -112,7 +112,15 @@ function sub_list() {
 }
 
 function sub_tree() {
-	vif +'NERDTree'
+	vif +'NvimTreeOpen'
+}
+
+function sub_grep() {
+    grep_command $1 $notes_dir
+}
+
+function sub_fzf() {
+    vif +'Files'
 }
 
 subcommand=$1
@@ -145,5 +153,3 @@ if [[ $? ]]; then
 	git add .
 	git commit -m $(date '+%y-%m-%d-%H:%M:%S') &> /dev/null
 fi
-
-

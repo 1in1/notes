@@ -4,12 +4,14 @@ Bare-bones note management - this is my personal note-taking script. Works on Ma
 
 Path dependencies:
 - fd
-- vim
+- fzf
+- nvim
 - git
 - tree
 
-Vim dependencies:
+`nvim` dependencies:
 - Goyo
-- NERDTree
+- nvim-tree
+- fzf.vim
 
 Editing this to suit your preferences is hopefully pretty self-explanatory!
